@@ -18,7 +18,8 @@ Vagrant.configure("2") do |config|
       {
         kibana: { 
           webserver_listen: "0.0.0.0",
-          webserver: "nginx"
+          webserver: "nginx",
+          install_type: "file"
         },
         elasticsearch: {
           min_mem: '64m',
@@ -26,13 +27,16 @@ Vagrant.configure("2") do |config|
           limits: {
               nofile: 1024,
               memlock: 512
-          }
+          },
+          deb_url: 'https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.10.deb',
+          deb_sha: '599a8ff133f0800bb58032f1bf4ec0b1746c307befb57c65ee9d32af9f407c04'
         },
       }
     chef.run_list = [ 
       "recipe[apt::default]",
       "recipe[java::default]",
-      "recipe[elasticsearch::default]",
+      "recipe[elasticsearch::deb]",
+      "recipe[elasticsearch::curl]",
       "recipe[kibana::default]"
     ]
   end
@@ -43,6 +47,9 @@ Vagrant.configure("2") do |config|
     curl -s -XPUT "http://localhost:9200/${INDEX}/"
     curl -s -XPOST "http://localhost:9200/${INDEX}/test/" -d '{ "@timestamp" : "'${TIMESTAMP}'", "message" : "I am not a real log" }'
   FAKELOGSTASH
+
+  config.vm.network "forwarded_port", guest: 80, host: 8080
+  config.vm.network "forwarded_port", guest: 9200, host: 9200
 
   # Ubuntu 12.04 Config
   config.vm.define :ubuntu1204 do |ubuntu1204|
